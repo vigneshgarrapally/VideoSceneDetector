@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="home__container">
+    <h1 class="home__title">Welcome to Video Scene Detector</h1>
+    <div class="home__description-container">
+        <p class="home__description">
+            An advanced tool for scene analysis and video management. Upload your video to receive detailed scene analysis and timestamped scene transitions. Split videos into separate files for easier organization and navigation.
+        </p>
+        <br>
+        <a href="{{ url_for('upload') }}" class="btn btn--primary">Get Started</a>
+        <br>
+        <br>
+    </div>
+</div>
+{% endblock %}

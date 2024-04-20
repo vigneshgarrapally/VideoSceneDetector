@@ -1,0 +1,3 @@
+flask
+ffmpeg-python
+scenedetect[opencv]

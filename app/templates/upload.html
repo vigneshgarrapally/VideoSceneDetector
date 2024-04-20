@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="upload__container">
+    <h2 class="upload__title">Upload Your Video for Scene Analysis</h2>
+    <form method="post" enctype="multipart/form-data" class="upload__form">
+        <input type="file" name="video" accept="video/*" class="upload__input">
+        <button type="submit" class="btn btn--primary">Upload Video</button>
+    </form>
+    {% if scenes %}
+    <div class="scenes__container">
+        <h3 class="scenes__title">Detected Scenes</h3>
+        <table class="scenes__table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Scene Thumbnail</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for scene in scenes %}
+                <tr>
+                    <td>{{ scene.timestamp }}</td>
+                    <td>
+                         <img src="{{ url_for('download_file', filepath=scene.thumbnail) }}" alt="Scene Thumbnail" class="scene__thumbnail">
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Scene Detector</title>
+    <!-- Google Fonts -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <!-- Custom CSS -->
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: "Roboto", sans-serif;
+        background-color: #cedae3;
+      }
+
+      a {
+        text-decoration: none;
+        color: inherit;
+      }
+      .footer {
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100%;
+        background-color: #242327;
+        color: white; /* White text for contrast */
+        text-align: center;
+        padding: 15px;
+        font-size: 14px;
+      }
+      .header {
+        width: 100%;
+        height: 10vh;
+        background-color: #242327;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2em 1em;
+      }
+
+      .nav__container {
+        width: 100%;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: space-around;
+      }
+
+      .nav__logo {
+        font-size: 1rem;
+        font-weight: bold;
+        letter-spacing: -1px;
+        text-transform: uppercase;
+      }
+
+      .nav__links {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1.5em;
+        font-size: 1.25rem;
+        color: hsla(0, 0%, 100%, 0.7);
+      }
+
+      .nav__link {
+        transition: all 0.3s ease;
+      }
+
+      .nav__link:hover {
+        color: white;
+        transform: translateY(-3px);
+      }
+
+      .btn {
+        border: 0;
+        border-radius: 20px;
+        padding: 0.75em 2.25em;
+        font-family: inherit;
+        font-size: 1rem;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .btn--primary {
+        background-color: #4288aa;
+        color: hsla(0, 100%, 100%, 0.8);
+      }
+
+      .btn--primary:hover {
+        border-radius: 15px;
+        background-color: rgba(66, 136, 170, 0.9);
+      }
+
+      /* Media Queries */
+      @media screen and (width <= 768px) {
+        .header {
+          height: 40vh;
+          padding: 1em 1em;
+        }
+
+        .nav__container {
+          height: 100%;
+          flex-direction: column;
+          align-items: space-between;
+        }
+      }
+
+      @media screen and (width <= 360px) {
+        .nav__links {
+          flex-direction: column;
+          gap: 1em;
+        }
+      }
+      .home__container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 80vh; /* Adjusts the vertical alignment */
+        text-align: center;
+      }
+
+      .home__title {
+        font-size: 2.5rem; /* Large title font size */
+        font-weight: 700; /* Bold */
+        color: #242327; /* Text color for title */
+      }
+
+      .home__description-container {
+        max-width: 60%; /* Limits the width to avoid stretching */
+        padding: 1em; /* Adds padding for spacing */
+        background-color: white; /* Background to emphasize content */
+        border-radius: 10px; /* Rounded corners for a modern look */
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+      }
+
+      .home__description {
+        font-size: 1.2rem; /* Slightly smaller font for the description */
+        color: #2d2d2d; /* Darker gray for description */
+        line-height: 1.5; /* Line height for easier reading */
+      }
+
+      .btn--primary {
+        margin-top: 1.5em; /* Space between description and button */
+      }
+
+      .upload__container {
+        max-width: 60%; /* Restrict the width to maintain alignment */
+        padding: 2em;
+        margin: 2em auto;
+        text-align: center; /* Centered text */
+        background-color: white; /* Background for contrast */
+        border-radius: 10px; /* Rounded corners */
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1); /* Subtle shadow for depth */
+      }
+
+      .upload__title {
+        font-size: 2rem; /* Slightly smaller than the home page title */
+        color: #242327; /* Dark gray for the title */
+      }
+
+      .upload__form {
+        margin-top: 1.5em; /* Space between title and form */
+      }
+
+      .upload__input {
+        margin-bottom: 1.5em; /* Space between input and button */
+        /*increase size of this input*/
+        width: 40%;
+        padding: 1em;
+        border: 1px solid #242327;
+        border-radius: 5px;
+        font-size: 1rem;
+      }
+
+      .scenes__container {
+        color: #2d2d2d; /* Darker gray for text */
+        margin-top: 2em; /* Space between upload form and scene results */
+      }
+
+      .scenes__title {
+        font-size: 1.5rem; /* Title for the scenes section */
+        color: #242327; /* Dark gray color */
+      }
+
+      .scenes__table {
+        width: 100%; /* Table should span the width of the container */
+        border-collapse: collapse; /* Avoid double borders */
+        text-align: center; /* Centered content */
+      }
+
+      .scenes__table th,
+      .scenes__table td {
+        padding: 1em; /* Padding for cells */
+      }
+
+      .scenes__table th {
+        background-color: #4288aa; /* Primary color for headers */
+        color: white; /* White text for headers */
+      }
+
+      .scenes__table td {
+        background-color: hsla(
+          0,
+          0%,
+          100%,
+          0.8
+        ); /* Light background for cells */
+      }
+
+      .scene__thumbnail {
+        width:500px; /* Fixed width for thumbnails */
+        height: auto; /* Maintain aspect ratio */
+        border-radius: 10px; /* Rounded corners for thumbnails */
+      }
+    </style>
+  </head>
+  <body>
+    <header class="header">
+      <nav class="nav__container">
+        <div class="nav__logo">
+          <h1 class="logo">Video Scene Detector</h1>
+        </div>
+        <ul class="nav__links">
+          <li class="nav__link">
+            <a href="{{ url_for('home') }}">Home</a>
+          </li>
+          <li class="nav__link">
+            <a href="{{ url_for('upload') }}">Upload</a>
+          </li>
+        </ul>
+      </nav>
+    </header>
+
+    <div class="content">
+      <!-- Block for page-specific content -->
+      {% block content %} {% endblock %}
+    </div>
+
+    <footer class="footer">
+      <div class="footer">
+        &copy; 2024 Video Scene Detector. All rights reserved.
+      </div>
+    </footer>
+  </body>
+</html>
