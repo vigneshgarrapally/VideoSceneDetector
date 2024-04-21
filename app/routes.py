@@ -12,6 +12,7 @@ import datetime
 from app import app
 import cv2
 import binascii
+from app.adaptive_detector import AdaptiveDetector
 
 
 @app.route("/")
@@ -37,58 +38,93 @@ def upload():
 
             file_path = unique_folder / filename
             file.save(str(file_path))
-
+            adaptive_threshold = float(
+                request.form.get("adaptive_threshold", 3.0)
+            )
+            min_scene_len = int(request.form.get("min_scene_len", 15))
+            window_width = int(request.form.get("window_width", 2))
+            min_content_val = float(request.form.get("min_content_val", 15.0))
+            content_detector = AdaptiveDetector(
+                adaptive_threshold=adaptive_threshold,
+                min_scene_len=min_scene_len,
+                window_width=window_width,
+                min_content_val=min_content_val,
+            )
             # Process the video to extract scene timestamps and thumbnails
-            scenes = detect_scenes(file_path, unique_folder)
-
+            scenes = detect_scenes(
+                file_path, unique_folder, scene_detector=content_detector
+            )
             return render_template("upload.html", scenes=scenes)
 
     return render_template("upload.html")
 
 
-def detect_scenes(file_path, output_folder):
+# Convert frames to a formatted timecode "HH:MM:SS[.nnn]"
+def frames_to_timecode(frame_count, fps, precision=3):
+    seconds = frame_count / fps
+    hrs = int(seconds // 3600)
+    mins = int((seconds % 3600) // 60)
+    secs = seconds % 60
+    if precision > 0:
+        secs = round(secs, precision)
+    return f"{hrs:02}:{mins:02}:{secs:06.3f}"
+
+
+def detect_scenes(file_path, output_folder, scene_detector):
     # Load the video using OpenCV
     cap = cv2.VideoCapture(str(file_path))
-    frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    frame_rate = int(cap.get(cv2.CAP_PROP_FPS))
-    scene_interval = 20  # Interval for capturing scenes (every 60 seconds)
-    scenes = []
-    print(f"Total frames: {frame_count}, Frame rate: {frame_rate}")
-    # Create a folder for storing thumbnails if it doesn't exist
-    thumbnails_folder = Path(output_folder) / "thumbnails"
-    thumbnails_folder.mkdir(parents=True, exist_ok=True)
-    # Loop through the video frames and capture scenes at specific intervals
-    for i in range(0, frame_count, scene_interval * frame_rate):
-        cap.set(cv2.CAP_PROP_POS_FRAMES, i)
-        ret, frame = cap.read()
+    fps = cap.get(cv2.CAP_PROP_FPS)
+    scene_list = []
+    frame_number = 0
+    previous_scene_frame = 0
 
+    # Create a folder for storing scenecut start frames
+    scenecuts_folder = Path(output_folder) / "scenecuts"
+    scenecuts_folder.mkdir(parents=True, exist_ok=True)
+
+    while True:
+        ret, frame = cap.read()
         if not ret:
             break
 
-        # Generate a unique thumbnail filename based on the frame number
-        thumbnail_filename = f"thumbnail_{i}.jpg"
-        thumbnail_path = thumbnails_folder / thumbnail_filename
+        # Detect scene cuts
+        is_scene_cut = scene_detector.process_frame(frame_number, frame)
+        if is_scene_cut:
+            if previous_scene_frame != is_scene_cut[0]:
+                scene_list.append((previous_scene_frame, is_scene_cut[0]))
+            previous_scene_frame = is_scene_cut[0]
 
-        # Save the frame as an image
-        cv2.imwrite(str(thumbnail_path), frame)
-        relative_thumbnail_path = thumbnail_path.relative_to(Path.cwd())
-        # Calculate the timestamp for this scene
-        timestamp = i / frame_rate  # Convert to seconds
+        frame_number += 1
 
-        # Append scene information
-        scenes.append(
+    if previous_scene_frame != frame_number:
+        scene_list.append((previous_scene_frame, frame_number))
+
+    detected_scenes = []
+    for i, (start, end) in enumerate(scene_list):
+        start_time = frames_to_timecode(start, fps)
+        end_time = frames_to_timecode(end, fps)
+        scene_duration = frames_to_timecode(end - start, fps, precision=0)
+        # save scene start frame as an image
+        cap.set(cv2.CAP_PROP_POS_FRAMES, start)
+        ret, frame = cap.read()
+        scene_img_path = scenecuts_folder / f"scene_{i:03d}.jpg"
+        cv2.imwrite(str(scene_img_path), frame)
+        detected_scenes.append(
             {
-                "timestamp": timestamp,
-                "thumbnail": binascii.hexlify(
-                    str(relative_thumbnail_path).encode("utf-8")
+                "scene_number": i + 1,
+                "start_time": start_time,
+                "end_time": end_time,
+                "duration": scene_duration,
+                "scene_img_path": binascii.hexlify(
+                    str(scene_img_path.relative_to(Path.cwd())).encode(
+                        "utf-8"
+                    )
                 ).decode(),
             }
         )
 
     cap.release()
-    print(f"Detected {len(scenes)} scenes")
-    print(scenes)
-    return scenes
+    return detected_scenes
 
 
 def allowed_file(filename):

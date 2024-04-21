@@ -5,24 +5,87 @@
     <h2 class="upload__title">Upload Your Video for Scene Analysis</h2>
     <form method="post" enctype="multipart/form-data" class="upload__form">
         <input type="file" name="video" accept="video/*" class="upload__input">
+        
+        <!-- New parameters with default values -->
+        <div class="upload__parameter">
+            <label for="adaptive_threshold">Adaptive Threshold:</label>
+            <input
+                type="number"
+                step="0.1"
+                name="adaptive_threshold"
+                id="adaptive_threshold"
+                class="form-control"
+                value="3.0"
+                required
+            >
+        </div>
+        <br>
+
+        
+        <div class="upload__parameter">
+            <label for="min_scene_len">Minimum Scene Length (frames):</label>
+            <input
+                type="number"
+                name="min_scene_len"
+                id="min_scene_len"
+                class="form-control"
+                value="15"
+                required
+            >
+        </div>
+        
+        <br>
+
+        <div class="upload__parameter">
+            <label for="window_width">Window Width:</label>
+            <input
+                type="number"
+                name="window_width"
+                id="window_width"
+                class="form-control"
+                value="2"
+                required
+            >
+        </div>
+        <br>
+        <div class="upload__parameter">
+            <label for="min_content_val">Minimum Content Value:</label>
+            <input
+                type="number"
+                step="0.1"
+                name="min_content_val"
+                id="min_content_val"
+                value="15.0"
+                class="form-control"
+                required
+            >
+        </div>
+        <br>
         <button type="submit" class="btn btn--primary">Upload Video</button>
     </form>
+
     {% if scenes %}
     <div class="scenes__container">
         <h3 class="scenes__title">Detected Scenes</h3>
         <table class="scenes__table">
             <thead>
                 <tr>
-                    <th>Timestamp</th>
-                    <th>Scene Thumbnail</th>
+                    <th>Scene Number</th>
+                    <th>Start Time</th>
+                    <th>End Time</th>
+                    <th>Duration</th>
+                    <th>Scene Cut Start Frame</th>
                 </tr>
             </thead>
             <tbody>
                 {% for scene in scenes %}
                 <tr>
-                    <td>{{ scene.timestamp }}</td>
+                    <td>{{ scene.scene_number }}</td>
+                    <td>{{ scene.start_time }}</td>
+                    <td>{{ scene.end_time }}</td>
+                    <td>{{ scene.scene_duration }}</td>
                     <td>
-                         <img src="{{ url_for('download_file', filepath=scene.thumbnail) }}" alt="Scene Thumbnail" class="scene__thumbnail">
+                        <img src="{{ url_for('download_file', filepath=scene.scene_img_path) }}" alt="Scene Cut Start Frame" class="scene__thumbnail">
                     </td>
                 </tr>
                 {% endfor %}
