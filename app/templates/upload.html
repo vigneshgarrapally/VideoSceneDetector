@@ -5,7 +5,7 @@
     <h2 class="upload__title">Upload Your Video for Scene Analysis</h2>
     <form method="post" enctype="multipart/form-data" class="upload__form">
         <input type="file" name="video" accept="video/*" class="upload__input">
-        
+
         <!-- New parameters with default values -->
         <div class="upload__parameter">
             <label for="adaptive_threshold">Adaptive Threshold:</label>
@@ -15,13 +15,12 @@
                 name="adaptive_threshold"
                 id="adaptive_threshold"
                 class="form-control"
-                value="3.0"
+                value="{{ request.form.get('adaptive_threshold', 3.0) }}"
                 required
             >
         </div>
         <br>
 
-        
         <div class="upload__parameter">
             <label for="min_scene_len">Minimum Scene Length (frames):</label>
             <input
@@ -29,11 +28,10 @@
                 name="min_scene_len"
                 id="min_scene_len"
                 class="form-control"
-                value="15"
+                value="{{ request.form.get('min_scene_len', 15) }}"
                 required
             >
         </div>
-        
         <br>
 
         <div class="upload__parameter">
@@ -43,11 +41,12 @@
                 name="window_width"
                 id="window_width"
                 class="form-control"
-                value="2"
+                value="{{ request.form.get('window_width', 2) }}"
                 required
             >
         </div>
         <br>
+
         <div class="upload__parameter">
             <label for="min_content_val">Minimum Content Value:</label>
             <input
@@ -55,25 +54,36 @@
                 step="0.1"
                 name="min_content_val"
                 id="min_content_val"
-                value="15.0"
-                class="form-control"
+                value="{{ request.form.get('min_content_val', 15.0) }}"
                 required
             >
         </div>
         <br>
+
         <button type="submit" class="btn btn--primary">Upload Video</button>
     </form>
 
     {% if scenes %}
     <div class="scenes__container">
         <h3 class="scenes__title">Detected Scenes</h3>
+
+        <!-- Display the parameters used in the analysis -->
+        <div class="parameters__container">
+            <h4>Parameters Used:</h4>
+            <p>Adaptive Threshold: {{ adaptive_threshold }}</p>
+            <p>Minimum Scene Length (frames): {{ min_scene_len }}</p>
+            <p>Window Width: {{ window_width }}</p>
+            <p>Minimum Content Value: {{ min_content_val }}</p>
+        </div>
+        <br>
+
         <table class="scenes__table">
             <thead>
                 <tr>
                     <th>Scene Number</th>
-                    <th>Start Time</th>
-                    <th>End Time</th>
-                    <th>Duration</th>
+                    <th>Start Time(HH:MM:SS.ms)</th>
+                    <th>End Time(HH:MM:SS.ms)</th>
+                    <th>Duration(HH:MM:SS.ms)</th>
                     <th>Scene Cut Start Frame</th>
                 </tr>
             </thead>
@@ -83,7 +93,7 @@
                     <td>{{ scene.scene_number }}</td>
                     <td>{{ scene.start_time }}</td>
                     <td>{{ scene.end_time }}</td>
-                    <td>{{ scene.scene_duration }}</td>
+                    <td>{{ scene.duration }}</td>
                     <td>
                         <img src="{{ url_for('download_file', filepath=scene.scene_img_path) }}" alt="Scene Cut Start Frame" class="scene__thumbnail">
                     </td>

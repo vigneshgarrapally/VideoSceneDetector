@@ -23,12 +23,19 @@ def home():
 
 @app.route("/upload", methods=["GET", "POST"])
 def upload():
+    """
+    Handle the upload route for uploading a video file and detecting scenes.
+
+    Returns:
+        If a video file is uploaded and processed successfully, the function returns the rendered template
+        with the detected scenes and the parameters used for scene detection.
+        If no video file is uploaded, the function returns the default template for uploading a video.
+    """
     if request.method == "POST":
         file = request.files.get("video", None)
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
             upload_folder = app.config["UPLOAD_FOLDER"]
-            # create a folder with unique name based on current date time and pathlib
             unique_folder = (
                 Path.cwd()
                 / upload_folder
@@ -38,29 +45,55 @@ def upload():
 
             file_path = unique_folder / filename
             file.save(str(file_path))
+
+            # Get parameters from the form
             adaptive_threshold = float(
                 request.form.get("adaptive_threshold", 3.0)
             )
             min_scene_len = int(request.form.get("min_scene_len", 15))
             window_width = int(request.form.get("window_width", 2))
             min_content_val = float(request.form.get("min_content_val", 15.0))
+
+            # Initialize the scene detector with these parameters
             content_detector = AdaptiveDetector(
                 adaptive_threshold=adaptive_threshold,
                 min_scene_len=min_scene_len,
                 window_width=window_width,
                 min_content_val=min_content_val,
             )
-            # Process the video to extract scene timestamps and thumbnails
+
+            # Detect scenes and return them
             scenes = detect_scenes(
                 file_path, unique_folder, scene_detector=content_detector
             )
-            return render_template("upload.html", scenes=scenes)
 
+            # Pass parameters along with scenes
+            return render_template(
+                "upload.html",
+                scenes=scenes,
+                adaptive_threshold=adaptive_threshold,
+                min_scene_len=min_scene_len,
+                window_width=window_width,
+                min_content_val=min_content_val,
+            )
+
+    # Default template when no video has been uploaded
     return render_template("upload.html")
 
 
 # Convert frames to a formatted timecode "HH:MM:SS[.nnn]"
 def frames_to_timecode(frame_count, fps, precision=3):
+    """
+    Converts the given frame count to a timecode string in the format "hh:mm:ss.sss".
+
+    Args:
+        frame_count (int): The number of frames.
+        fps (float): The frames per second.
+        precision (int, optional): The number of decimal places for the seconds. Defaults to 3.
+
+    Returns:
+        str: The timecode string in the format "hh:mm:ss.sss".
+    """
     seconds = frame_count / fps
     hrs = int(seconds // 3600)
     mins = int((seconds % 3600) // 60)
@@ -128,6 +161,15 @@ def detect_scenes(file_path, output_folder, scene_detector):
 
 
 def allowed_file(filename):
+    """
+    Check if the given filename has an allowed extension.
+
+    Args:
+        filename (str): The name of the file to check.
+
+    Returns:
+        bool: True if the file has an allowed extension, False otherwise.
+    """
     return (
         "." in filename
         and filename.rsplit(".", 1)[1].lower()
